@@ -1,0 +1,90 @@
+#!/bin/bash
+
+if [ "$#" -gt 0 ]
+then
+    if [ $1 = "help" ]
+    then
+        echo "usage: run with no args to show status of all git repos found in current dir"
+        echo "commands:"
+        echo "    pull"
+        echo "    diff"
+        echo "    checkout"
+        echo "    help"
+    elif [ $1 = "pull" ]
+    then
+        echo "pulling from all repos"
+        #for i in `find . -type d -name ".git"`
+        for i in $(find . -maxdepth 2 -mindepth 2 -type d -name ".git")
+        do
+            GIT_REPO=$i
+            GIT_WORK_TREE=`echo $i | sed 's/\/\.git//g'`
+            LOCAL_HEAD=$(cd $GIT_WORK_TREE && git log -n1 --pretty=format:%h)
+            #tput setab 0 
+            tput setaf 2
+            echo -n "--- pulling: $GIT_WORK_TREE HEAD: $LOCAL_HEAD---"
+            tput sgr0
+            echo 
+            (cd $GIT_WORK_TREE && git pull )
+            (cd $GIT_WORK_TREE && git --no-pager log --pretty=format:"%h [%ci] %cn : %B" $LOCAL_HEAD..HEAD)
+            #echo 
+        done
+    elif [ $1 = "diff" ]
+    then
+        echo "diff for all repos"
+        for i in `find . -type d -name ".git"`
+        do
+            GIT_REPO=$i
+            GIT_WORK_TREE=`echo $i | sed 's/\/\.git//g'`
+            tput setab 0; tput setaf 2
+            echo -n "--$GIT_WORK_TREE HEAD: $LOCAL_HEAD---"
+            tput sgr0
+            echo ""
+            (cd $GIT_WORK_TREE && git --no-pager diff --color-words )
+        done
+    elif [ $1 = "checkout" ]
+    then
+        echo "checkout: $2 from all repos"
+        for i in `find . -type d -name ".git"`
+        do
+            GIT_REPO=$i
+            GIT_WORK_TREE=`echo $i | sed 's/\/\.git//g'`
+            tput setab 7; tput setaf 4
+            echo -n "--- checkout: $GIT_WORK_TREE into: $2 ---"
+            tput sgr0
+            echo ""
+            (cd $GIT_WORK_TREE && git checkout $2 )
+        done
+    else
+        echo "unknown command"
+    fi
+else
+    echo "checking all repos"
+    for i in $(find . -maxdepth 2 -mindepth 2 -type d -name ".git")
+    do
+        GIT_REPO=$i
+        GIT_WORK_TREE=`echo $i | sed 's/\/\.git//g'`
+
+        STATUS=$(git --git-dir=$GIT_REPO --work-tree=$GIT_WORK_TREE status)
+
+        BRANCH=$( echo "$STATUS" | sed -n '/^On branch/p' | sed 's/^On branch //g')
+        DETAILS=$(echo "$STATUS" | sed -e '/On branch /d' -e '/Your branch is up-to-date with/d' -e '/^$/d' -e '/nothing to commit,* (*working directory clean)*/d' -e 's/^/    /g')
+        if [ $BRANCH = "master" ]; then
+            tput setaf 2
+        else
+            tput setaf 1
+        fi
+        echo -ne "$BRANCH" | tr '[:lower:]' '[:upper:]'
+        echo -ne " : "
+        echo -ne "$GIT_WORK_TREE" | sed -e 's/^\.\///g'
+        #echo
+        tput sgr0
+
+        if [ -n "$DETAILS" ]; then
+          echo "$DETAILS"
+        fi
+
+        tput sgr0
+
+    done
+fi
+
