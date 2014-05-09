@@ -55,7 +55,8 @@ then
             (cd $GIT_WORK_TREE && git checkout $2 )
         done
     else
-        echo "unknown command"
+        cd $1
+        $0
     fi
 else
     echo "checking all repos"
