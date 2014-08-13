@@ -87,7 +87,7 @@ then
 
             BRANCH=$( echo "$STATUS" | sed -n '/^On branch/p' | sed 's/^On branch //g')
             DETAILS=$(echo "$STATUS" | sed -e '/On branch /d' -e '/Your branch is up-to-date with/d' -e '/^$/d' -e '/nothing to commit,* (*working directory clean)*/d' -e 's/^/    /g')
-            if [ $BRANCH = "master" ]; then
+            if [ "$BRANCH" == "master" ]; then
                 tput setaf 2
             else
                 tput setaf 1
