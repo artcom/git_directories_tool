@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if [ -f ".gitorious" ]; then
+  source .gitorious
+fi
+if [ -f "~/.gitorious" ]; then
+  source ~/.gitorious
+fi
+
+: ${PROJECT:='forschungscampus'}
+
+if [ "$#" -eq 1 ]
+then
+  if [ "$1" == "remote" ] 
+  then
+    curl -s3 "https://gitorious.intern.artcom.de/${PROJECT}.xml" |\
+    grep name |\
+    sed -e 's/^.*<name>//g' -e 's/<\/name>$//g' |\
+    sort
+
+  elif [ "$1" == "local" ] 
+  then
+    find . -maxdepth 2 -mindepth 2 -type d -name ".git" |\
+    sed -e 's/^\.\///g' -e 's/\/\.git$//g'
+
+  elif [ "$1" == "compare" ] 
+  then
+    colordiff -W 80 -y <($0 local) <($0 remote)
+
+  fi
+elif [ "$#" -ge 2 ]
+then
+  if [ "$1" == "clone" ]; then
+    git clone gitorious@gitorious.intern.artcom.de:${PROJECT}/$2.git
+
+  else  
+    cd $1
+    shift
+    $0 $@
+  fi
+fi
